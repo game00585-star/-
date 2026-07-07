@@ -221,6 +221,8 @@ export default function App() {
     if (header.includes("ชื่อ")) classes.push("case-name");
     if (header.includes("สาขา") || header.includes("ภาค")) classes.push("case-branch");
     if (header.includes("หมายเหตุ") || header.includes("สภ") || header.includes("พนักงาน")) classes.push("case-note");
+    if (header.includes("ศาล")) classes.push("case-court");
+    if (header.includes("ทนาย")) classes.push("case-lawyer");
     if (moneyHeaders.some((moneyHeader) => header.includes(moneyHeader))) classes.push("money");
     return classes.join(" ");
   };
