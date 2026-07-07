@@ -1,17 +1,13 @@
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
   background: #f3f4f6;
   color: #111827;
-  font-family: Arial, "Tahoma", sans-serif;
+  font-family: Tahoma, Arial, sans-serif;
 }
 
-.case-page {
-  padding: 24px;
-}
+.case-page { padding: 24px; font-size: 14px; }
 
 .case-header-card {
   display: flex;
@@ -25,14 +21,8 @@ body {
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
 }
 
-.case-header-card h2 {
-  margin: 0 0 8px;
-}
-
-.case-header-card p {
-  margin: 0;
-  color: #6b7280;
-}
+.case-header-card h2 { margin: 0 0 8px; }
+.case-header-card p { margin: 0; color: #6b7280; }
 
 .case-actions,
 .case-toolbar-actions {
@@ -57,45 +47,15 @@ body {
   cursor: pointer;
 }
 
-.case-file-button {
-  background: #111827;
-  color: #ffffff;
-}
+.case-file-button { background: #111827; color: #ffffff; }
+.case-file-button input { display: none; }
+.case-primary-button { background: #2563eb; color: #ffffff; }
+.case-secondary-button { border: 1px solid #d1d5db; background: #ffffff; color: #111827; }
+.case-primary-button:disabled, .case-secondary-button:disabled { cursor: not-allowed; opacity: 0.45; }
 
-.case-file-button input {
-  display: none;
-}
+.case-file-name { margin-top: 12px; color: #374151; font-size: 14px; }
 
-.case-primary-button {
-  background: #2563eb;
-  color: #ffffff;
-}
-
-.case-secondary-button {
-  border: 1px solid #d1d5db;
-  background: #ffffff;
-  color: #111827;
-}
-
-.case-primary-button:disabled,
-.case-secondary-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
-.case-file-name {
-  margin-top: 12px;
-  color: #374151;
-  font-size: 14px;
-}
-
-.case-tabs {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 18px;
-}
-
+.case-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
 .case-tabs button {
   padding: 10px 14px;
   border: 1px solid #d1d5db;
@@ -104,12 +64,7 @@ body {
   cursor: pointer;
   font-weight: 700;
 }
-
-.case-tabs button.active {
-  border-color: #2563eb;
-  background: #eff6ff;
-  color: #1d4ed8;
-}
+.case-tabs button.active { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; }
 
 .case-summary-grid {
   display: grid;
@@ -124,29 +79,10 @@ body {
   border-radius: 14px;
   background: #ffffff;
 }
-
-.case-summary-card span {
-  display: block;
-  margin-bottom: 6px;
-  color: #6b7280;
-  font-size: 12px;
-}
-
-.case-summary-card b {
-  font-size: 16px;
-}
-
-.case-summary-card.ok {
-  border-color: #86efac;
-  background: #f0fdf4;
-  color: #166534;
-}
-
-.case-summary-card.bad {
-  border-color: #fecaca;
-  background: #fef2f2;
-  color: #991b1b;
-}
+.case-summary-card span { display: block; margin-bottom: 6px; color: #6b7280; font-size: 12px; }
+.case-summary-card b { font-size: 16px; }
+.case-summary-card.ok { border-color: #86efac; background: #f0fdf4; color: #166534; }
+.case-summary-card.bad { border-color: #fecaca; background: #fef2f2; color: #991b1b; }
 
 .case-toolbar {
   display: flex;
@@ -162,7 +98,7 @@ body {
 
 .case-table-wrap {
   margin-top: 12px;
-  max-height: 72vh;
+  max-height: calc(100vh - 310px);
   overflow: auto;
   border: 1px solid #e5e7eb;
   border-radius: 14px;
@@ -172,10 +108,15 @@ body {
 .case-table {
   width: max-content;
   min-width: 100%;
-  table-layout: auto;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: 13px;
   background: #ffffff;
+}
+
+.case-table * {
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
 }
 
 .case-table th {
@@ -184,50 +125,54 @@ body {
   z-index: 3;
   height: 42px;
   padding: 8px 10px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #dbe2ea;
   background: #eef2f7;
   color: #111827;
   font-weight: 800;
   text-align: left;
   white-space: nowrap;
   vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .case-table td {
-  min-width: 130px;
-  height: 38px;
-  padding: 0;
+  padding: 7px 10px;
   border: 1px solid #e5e7eb;
   background: #ffffff;
+  vertical-align: top;
+  line-height: 1.45;
+  min-height: 38px;
+  height: auto;
+  white-space: nowrap;
+  word-break: keep-all;
+  overflow-wrap: normal;
+}
+
+.case-table tr:nth-child(even) td { background: #fafafa; }
+
+.cell-text {
+  display: block;
+  max-height: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.case-table td.wrap-text .cell-text {
+  white-space: normal;
+  word-break: normal;
+  overflow-wrap: break-word;
+  max-height: none;
+}
+
+.case-table td.money {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
   vertical-align: middle;
 }
 
-.case-table tr:nth-child(even) td {
-  background: #fafafa;
-}
-
-.case-table textarea {
-  display: block;
-  width: 100%;
-  height: 38px;
-  min-height: 38px;
-  max-height: 38px;
-  padding: 8px 10px;
-  border: 0;
-  outline: none;
-  resize: none;
-  overflow: hidden;
-  background: transparent;
-  color: #111827;
-  font: inherit;
-  line-height: 20px;
-  white-space: nowrap;
-}
-
-.case-table textarea:focus {
-  background: #fff7ed;
-  box-shadow: inset 0 0 0 2px #fb923c;
-}
+.case-no { text-align: center; vertical-align: middle !important; }
 
 .case-title-row td {
   padding: 12px 14px;
@@ -241,195 +186,16 @@ body {
 .case-total-row td {
   background: #f8fafc !important;
   font-weight: 800;
-}
-
-.case-total-row textarea {
-  font-weight: 800;
-}
-
-.case-no {
-  min-width: 95px !important;
-  text-align: center;
-}
-
-.case-court {
-  min-width: 210px !important;
-}
-
-.case-lawyer {
-  min-width: 170px !important;
-}
-
-.case-name {
-  min-width: 240px !important;
-}
-
-.case-branch {
-  min-width: 220px !important;
-}
-
-.case-note {
-  min-width: 240px !important;
-}
-
-.case-table td.money textarea {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-}
-
-.case-delete-col {
-  position: sticky;
-  left: 0;
-  z-index: 2;
-  min-width: 78px !important;
-  width: 78px;
-  height: 38px;
-  text-align: center !important;
-  background: #f8fafc !important;
-}
-
-.case-table th.case-delete-col {
-  z-index: 4;
-}
-
-.case-delete-button {
-  margin: 4px;
-  padding: 5px 10px;
-  border: 1px solid #fecaca;
-  border-radius: 8px;
-  background: #fef2f2;
-  color: #b91c1c;
-  font-weight: 700;
-  cursor: pointer;
+  vertical-align: middle;
 }
 
 @media (max-width: 1100px) {
-  .case-summary-grid {
-    grid-template-columns: repeat(2, minmax(150px, 1fr));
-  }
+  .case-summary-grid { grid-template-columns: repeat(2, minmax(150px, 1fr)); }
 }
 
 @media (max-width: 768px) {
-  .case-page {
-    padding: 12px;
-  }
-
-  .case-header-card,
-  .case-toolbar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .case-actions,
-  .case-toolbar-actions {
-    justify-content: flex-start;
-  }
-
-  .case-summary-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-
-/* compact horizontal spreadsheet fix */
-.case-table * {
-  writing-mode: horizontal-tb !important;
-  text-orientation: mixed !important;
-}
-
-.case-table td,
-.case-table th,
-.case-table textarea {
-  word-break: normal !important;
-  overflow-wrap: normal !important;
-}
-
-.case-total-row textarea {
-  white-space: nowrap;
-}
-
-/* auto size + readable Thai text */
-.case-page {
-  font-family: Tahoma, Arial, sans-serif;
-  font-size: 14px;
-}
-
-.case-table-wrap {
-  max-height: calc(100vh - 310px);
-}
-
-.case-table {
-  width: max-content;
-  min-width: 100%;
-  table-layout: fixed;
-  font-size: 14px;
-}
-
-.case-table th,
-.case-table td,
-.case-table textarea {
-  writing-mode: horizontal-tb !important;
-  text-orientation: mixed !important;
-  white-space: nowrap !important;
-  word-break: keep-all !important;
-  overflow-wrap: normal !important;
-  line-break: strict !important;
-}
-
-.case-table th {
-  height: 42px;
-  min-height: 42px;
-  padding: 8px 10px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 14px;
-}
-
-.case-table td {
-  height: 36px;
-  min-height: 36px;
-  max-height: 36px;
-  overflow: hidden;
-}
-
-.case-table textarea {
-  height: 36px;
-  min-height: 36px;
-  max-height: 36px;
-  padding: 7px 10px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  text-overflow: clip;
-  font-size: 14px;
-  line-height: 20px;
-}
-
-.case-total-row td,
-.case-total-row textarea {
-  height: 38px;
-  min-height: 38px;
-  max-height: 38px;
-}
-
-.case-title-row td {
-  height: 42px;
-  min-height: 42px;
-  max-height: 42px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.case-no,
-.case-court,
-.case-lawyer,
-.case-name,
-.case-branch,
-.case-note {
-  min-width: unset !important;
-}
-
-.case-delete-col {
-  width: 78px !important;
-  min-width: 78px !important;
-  max-width: 78px !important;
+  .case-page { padding: 12px; }
+  .case-header-card, .case-toolbar { flex-direction: column; align-items: stretch; }
+  .case-actions, .case-toolbar-actions { justify-content: flex-start; }
+  .case-summary-grid { grid-template-columns: 1fr; }
 }
