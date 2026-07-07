@@ -25,10 +25,19 @@ const formatDateValue = (value) => {
   return String(value ?? "");
 };
 
+const toNumber = (value) => {
+  if (value === "" || value === null || value === undefined) return 0;
+  const text = String(value).replace(/,/g, "").replace(/-/g, "0").trim();
+  const num = Number(text);
+  return Number.isFinite(num) ? num : 0;
+};
+
 const formatMoneyPreview = (value) => {
   if (value === "" || value === null || value === undefined) return "";
-  const numericValue = Number(String(value).replace(/,/g, ""));
-  if (Number.isNaN(numericValue)) return String(value);
+  const numericValue = toNumber(value);
+  if (!numericValue && String(value).trim() !== "0" && String(value).trim() !== "-") {
+    return String(value);
+  }
   return numericValue.toLocaleString("th-TH", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -44,6 +53,29 @@ const normalizeRows = (rows) => {
   });
 };
 
+const findColumnIndex = (headerRow, keywords) => {
+  return headerRow.findIndex((header) =>
+    keywords.some((keyword) => String(header || "").includes(keyword))
+  );
+};
+
+const isRealCaseRow = (row, rowIndex, headerRowIndex) => {
+  if (rowIndex <= headerRowIndex) return false;
+  const firstCell = String(row[0] ?? "").trim();
+  if (!firstCell) return false;
+  if (firstCell.includes("รวม")) return false;
+  return !Number.isNaN(Number(firstCell));
+};
+
+const convertCellForExport = (cell) => {
+  const text = String(cell ?? "").trim();
+  const numericText = text.replace(/,/g, "");
+  if (text !== "" && !Number.isNaN(Number(numericText))) {
+    return Number(numericText);
+  }
+  return cell;
+};
+
 export default function App() {
   const [fileName, setFileName] = useState("");
   const [sheets, setSheets] = useState([]);
@@ -53,6 +85,36 @@ export default function App() {
   const rows = sheetRows[activeSheet] || [];
   const headerRowIndex = useMemo(() => findHeaderRowIndex(rows), [rows]);
   const headerRow = rows[headerRowIndex] || [];
+
+  const debtCol = useMemo(() => findColumnIndex(headerRow, ["หนี้/ความเสียหาย", "ยอดหนี้"]), [headerRow]);
+  const paidCol = useMemo(() => findColumnIndex(headerRow, ["ชำระแล้ว", "ยอดชำระ"]), [headerRow]);
+  const remainCol = useMemo(() => findColumnIndex(headerRow, ["คงเหลือ"]), [headerRow]);
+  const documentCol = useMemo(() => findColumnIndex(headerRow, ["หนังสือรับสภาพหนี้"]), [headerRow]);
+
+  const summary = useMemo(() => {
+    const result = {
+      caseCount: 0,
+      debt: 0,
+      paid: 0,
+      remain: 0,
+      document: 0,
+      diff: 0,
+      isBalanced: true,
+    };
+
+    rows.forEach((row, rowIndex) => {
+      if (!isRealCaseRow(row, rowIndex, headerRowIndex)) return;
+      result.caseCount += 1;
+      if (debtCol >= 0) result.debt += toNumber(row[debtCol]);
+      if (paidCol >= 0) result.paid += toNumber(row[paidCol]);
+      if (remainCol >= 0) result.remain += toNumber(row[remainCol]);
+      if (documentCol >= 0) result.document += toNumber(row[documentCol]);
+    });
+
+    result.diff = result.debt - result.paid - result.remain;
+    result.isBalanced = Math.abs(result.diff) < 0.01;
+    return result;
+  }, [rows, headerRowIndex, debtCol, paidCol, remainCol, documentCol]);
 
   const handleFileUpload = async (event) => {
     const file = event.target.files?.[0];
@@ -90,7 +152,9 @@ export default function App() {
     setSheetRows((prev) => {
       const currentRows = prev[activeSheet] || [];
       const columnCount = Math.max(1, ...currentRows.map((row) => row.length));
-      const nextRows = [...currentRows, Array(columnCount).fill("")];
+      const newRow = Array(columnCount).fill("");
+      newRow[0] = summary.caseCount + 1;
+      const nextRows = [...currentRows, newRow];
       return { ...prev, [activeSheet]: nextRows };
     });
   };
@@ -103,6 +167,24 @@ export default function App() {
     });
   };
 
+  const recalculateRemain = () => {
+    if (debtCol < 0 || paidCol < 0 || remainCol < 0) {
+      alert("ไม่พบคอลัมน์ หนี้/ความเสียหาย, ชำระแล้ว หรือ คงเหลือ");
+      return;
+    }
+
+    setSheetRows((prev) => {
+      const nextRows = (prev[activeSheet] || []).map((row, rowIndex) => {
+        const nextRow = [...row];
+        if (isRealCaseRow(nextRow, rowIndex, headerRowIndex)) {
+          nextRow[remainCol] = toNumber(nextRow[debtCol]) - toNumber(nextRow[paidCol]);
+        }
+        return nextRow;
+      });
+      return { ...prev, [activeSheet]: nextRows };
+    });
+  };
+
   const exportExcel = () => {
     if (!sheets.length) {
       alert("กรุณาเลือกไฟล์ Excel ก่อน");
@@ -110,19 +192,8 @@ export default function App() {
     }
 
     const workbook = XLSX.utils.book_new();
-
     sheets.forEach((sheetName) => {
-      const cleanRows = (sheetRows[sheetName] || []).map((row) =>
-        row.map((cell) => {
-          const text = String(cell ?? "").trim();
-          const numericText = text.replace(/,/g, "");
-          if (text !== "" && !Number.isNaN(Number(numericText))) {
-            return Number(numericText);
-          }
-          return cell;
-        })
-      );
-
+      const cleanRows = (sheetRows[sheetName] || []).map((row) => row.map(convertCellForExport));
       const worksheet = XLSX.utils.aoa_to_sheet(cleanRows);
       XLSX.utils.book_append_sheet(workbook, worksheet, sheetName.slice(0, 31));
     });
@@ -137,7 +208,8 @@ export default function App() {
   const exportActiveSheet = () => {
     if (!activeSheet) return;
     const workbook = XLSX.utils.book_new();
-    const worksheet = XLSX.utils.aoa_to_sheet(sheetRows[activeSheet] || []);
+    const cleanRows = (sheetRows[activeSheet] || []).map((row) => row.map(convertCellForExport));
+    const worksheet = XLSX.utils.aoa_to_sheet(cleanRows);
     XLSX.utils.book_append_sheet(workbook, worksheet, activeSheet.slice(0, 31));
     XLSX.writeFile(workbook, `${activeSheet}_แก้ไขแล้ว.xlsx`);
   };
@@ -151,6 +223,11 @@ export default function App() {
     if (header.includes("หมายเหตุ") || header.includes("สภ") || header.includes("พนักงาน")) classes.push("case-note");
     if (moneyHeaders.some((moneyHeader) => header.includes(moneyHeader))) classes.push("money");
     return classes.join(" ");
+  };
+
+  const shouldShowFormattedMoney = (cellIndex) => {
+    const header = String(headerRow[cellIndex] || "");
+    return moneyHeaders.some((moneyHeader) => header.includes(moneyHeader));
   };
 
   return (
@@ -193,11 +270,26 @@ export default function App() {
 
       {rows.length > 0 && (
         <>
+          <div className="case-summary-grid">
+            <div className="case-summary-card"><span>จำนวนรายการ</span><b>{summary.caseCount}</b></div>
+            <div className="case-summary-card"><span>หนี้/ความเสียหาย</span><b>{formatMoneyPreview(summary.debt)}</b></div>
+            <div className="case-summary-card"><span>ชำระแล้ว</span><b>{formatMoneyPreview(summary.paid)}</b></div>
+            <div className="case-summary-card"><span>คงเหลือ</span><b>{formatMoneyPreview(summary.remain)}</b></div>
+            <div className="case-summary-card"><span>รับสภาพหนี้</span><b>{formatMoneyPreview(summary.document)}</b></div>
+            <div className={summary.isBalanced ? "case-summary-card ok" : "case-summary-card bad"}>
+              <span>ตรวจสมดุล</span>
+              <b>{summary.isBalanced ? "สมดุล" : `ต่าง ${formatMoneyPreview(summary.diff)}`}</b>
+            </div>
+          </div>
+
           <div className="case-toolbar">
             <div>
-              ชีตปัจจุบัน: <b>{activeSheet}</b> | จำนวนแถว: <b>{rows.length}</b>
+              ชีตปัจจุบัน: <b>{activeSheet}</b> | จำนวนแถวทั้งหมด: <b>{rows.length}</b> | แถวข้อมูลจริง: <b>{summary.caseCount}</b>
             </div>
-            <button className="case-secondary-button" onClick={addRow}>+ เพิ่มแถว</button>
+            <div className="case-toolbar-actions">
+              <button className="case-secondary-button" onClick={recalculateRemain}>คำนวณคงเหลือใหม่</button>
+              <button className="case-secondary-button" onClick={addRow}>+ เพิ่มแถว</button>
+            </div>
           </div>
 
           <div className="case-table-wrap">
@@ -207,6 +299,7 @@ export default function App() {
                   const filledCellCount = row.filter((cell) => String(cell).trim() !== "").length;
                   const isTitleRow = rowIndex < headerRowIndex && filledCellCount <= 2;
                   const isHeaderRow = rowIndex === headerRowIndex;
+                  const isTotalRow = row.some((cell) => String(cell).includes("รวม"));
 
                   if (isTitleRow) {
                     return (
@@ -228,16 +321,16 @@ export default function App() {
                   }
 
                   return (
-                    <tr key={rowIndex}>
+                    <tr key={rowIndex} className={isTotalRow ? "case-total-row" : ""}>
                       <td className="case-delete-col">
-                        <button className="case-delete-button" onClick={() => deleteRow(rowIndex)}>
-                          ลบ
-                        </button>
+                        {!isTotalRow && (
+                          <button className="case-delete-button" onClick={() => deleteRow(rowIndex)}>
+                            ลบ
+                          </button>
+                        )}
                       </td>
                       {row.map((cell, cellIndex) => {
-                        const header = String(headerRow[cellIndex] || "");
-                        const isMoney = moneyHeaders.some((moneyHeader) => header.includes(moneyHeader));
-
+                        const isMoney = shouldShowFormattedMoney(cellIndex);
                         return (
                           <td key={cellIndex} className={getCellClassName(cellIndex)}>
                             <textarea
