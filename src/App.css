@@ -347,3 +347,22 @@ body {
 .case-total-row textarea {
   white-space: nowrap;
 }
+
+
+/* Force horizontal text */
+.case-table th,
+.case-table td,
+.case-table textarea,
+.case-table input{
+  writing-mode: horizontal-tb !important;
+  text-orientation: mixed !important;
+  white-space: nowrap !important;
+  word-break: keep-all !important;
+  overflow-wrap: normal !important;
+  hyphens: none !important;
+}
+
+.case-table textarea{
+  overflow-x:auto;
+  overflow-y:hidden;
+}
