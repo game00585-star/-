@@ -76,6 +76,37 @@ const convertCellForExport = (cell) => {
   return cell;
 };
 
+
+const measureTextWidth = (value) => {
+  const text = String(value ?? "").replace(/\s+/g, " ").trim();
+  if (!text) return 60;
+
+  let width = 44;
+  for (const char of text) {
+    if (/\d|[A-Za-z]/.test(char)) width += 8;
+    else if (/[,./:-]/.test(char)) width += 5;
+    else width += 13;
+  }
+  return width;
+};
+
+const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+
+const getColumnWidthFromHeader = (header) => {
+  const text = String(header || "");
+  if (text.includes("ชื่อ")) return { min: 260, max: 420 };
+  if (text.includes("สาขา") || text.includes("ภาค")) return { min: 230, max: 380 };
+  if (text.includes("ศาล")) return { min: 240, max: 360 };
+  if (text.includes("เลขคดี")) return { min: 150, max: 230 };
+  if (text.includes("ทนาย")) return { min: 150, max: 250 };
+  if (text.includes("ชำระล่าสุด")) return { min: 130, max: 190 };
+  if (text.includes("วัน") || text.includes("เดือน") || text.includes("ปี")) return { min: 150, max: 220 };
+  if (moneyHeaders.some((moneyHeader) => text.includes(moneyHeader))) return { min: 150, max: 220 };
+  if (text.includes("สภ") || text.includes("พนักงาน") || text.includes("หมายเหตุ")) return { min: 220, max: 420 };
+  if (text === "ที่") return { min: 72, max: 90 };
+  return { min: 130, max: 260 };
+};
+
 export default function App() {
   const [fileName, setFileName] = useState("");
   const [sheets, setSheets] = useState([]);
@@ -85,6 +116,25 @@ export default function App() {
   const rows = sheetRows[activeSheet] || [];
   const headerRowIndex = useMemo(() => findHeaderRowIndex(rows), [rows]);
   const headerRow = rows[headerRowIndex] || [];
+
+  const columnStyles = useMemo(() => {
+    const columnCount = Math.max(0, ...rows.map((row) => row.length));
+    return Array.from({ length: columnCount }, (_, cellIndex) => {
+      const header = headerRow[cellIndex] || "";
+      const limit = getColumnWidthFromHeader(header);
+      const sampleRows = rows.slice(0, 80);
+      const contentWidth = Math.max(
+        measureTextWidth(header),
+        ...sampleRows.map((row) => measureTextWidth(row[cellIndex]))
+      );
+      const width = clamp(contentWidth + 24, limit.min, limit.max);
+      return {
+        width: `${width}px`,
+        minWidth: `${width}px`,
+        maxWidth: `${width}px`,
+      };
+    });
+  }, [rows, headerRow]);
 
   const debtCol = useMemo(() => findColumnIndex(headerRow, ["หนี้/ความเสียหาย", "ยอดหนี้"]), [headerRow]);
   const paidCol = useMemo(() => findColumnIndex(headerRow, ["ชำระแล้ว", "ยอดชำระ"]), [headerRow]);
@@ -316,7 +366,7 @@ export default function App() {
                       <tr key={rowIndex}>
                         <th className="case-delete-col">จัดการ</th>
                         {row.map((cell, cellIndex) => (
-                          <th key={cellIndex}>{formatDateValue(cell)}</th>
+                          <th key={cellIndex} style={columnStyles[cellIndex]}>{formatDateValue(cell)}</th>
                         ))}
                       </tr>
                     );
@@ -334,9 +384,10 @@ export default function App() {
                       {row.map((cell, cellIndex) => {
                         const isMoney = shouldShowFormattedMoney(cellIndex);
                         return (
-                          <td key={cellIndex} className={getCellClassName(cellIndex)}>
+                          <td key={cellIndex} className={getCellClassName(cellIndex)} style={columnStyles[cellIndex]}>
                             <textarea
                               value={isMoney ? formatMoneyPreview(cell) : formatDateValue(cell)}
+                              title={isMoney ? formatMoneyPreview(cell) : formatDateValue(cell)}
                               onChange={(event) => updateCell(rowIndex, cellIndex, event.target.value)}
                               rows={1}
                             />

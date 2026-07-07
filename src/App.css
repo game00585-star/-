@@ -348,21 +348,88 @@ body {
   white-space: nowrap;
 }
 
+/* auto size + readable Thai text */
+.case-page {
+  font-family: Tahoma, Arial, sans-serif;
+  font-size: 14px;
+}
 
-/* Force horizontal text */
+.case-table-wrap {
+  max-height: calc(100vh - 310px);
+}
+
+.case-table {
+  width: max-content;
+  min-width: 100%;
+  table-layout: fixed;
+  font-size: 14px;
+}
+
 .case-table th,
 .case-table td,
-.case-table textarea,
-.case-table input{
+.case-table textarea {
   writing-mode: horizontal-tb !important;
   text-orientation: mixed !important;
   white-space: nowrap !important;
   word-break: keep-all !important;
   overflow-wrap: normal !important;
-  hyphens: none !important;
+  line-break: strict !important;
 }
 
-.case-table textarea{
-  overflow-x:auto;
-  overflow-y:hidden;
+.case-table th {
+  height: 42px;
+  min-height: 42px;
+  padding: 8px 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 14px;
+}
+
+.case-table td {
+  height: 36px;
+  min-height: 36px;
+  max-height: 36px;
+  overflow: hidden;
+}
+
+.case-table textarea {
+  height: 36px;
+  min-height: 36px;
+  max-height: 36px;
+  padding: 7px 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  text-overflow: clip;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.case-total-row td,
+.case-total-row textarea {
+  height: 38px;
+  min-height: 38px;
+  max-height: 38px;
+}
+
+.case-title-row td {
+  height: 42px;
+  min-height: 42px;
+  max-height: 42px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.case-no,
+.case-court,
+.case-lawyer,
+.case-name,
+.case-branch,
+.case-note {
+  min-width: unset !important;
+}
+
+.case-delete-col {
+  width: 78px !important;
+  min-width: 78px !important;
+  max-width: 78px !important;
 }
