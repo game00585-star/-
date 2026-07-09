@@ -75,6 +75,46 @@ const convertCellForExport = (cell) => {
   return cell;
 };
 
+const notificationHeaders = ["Mail", "Line"];
+
+const buildRowsForExport = (rows, contactInfo) => {
+  const normalizedRows = normalizeRows(rows);
+  const hasContactInfo = Boolean(contactInfo.mail.trim() || contactInfo.line.trim());
+
+  if (!hasContactInfo) {
+    return normalizedRows.map((row) => row.map(convertCellForExport));
+  }
+
+  const headerRowIndex = findHeaderRowIndex(normalizedRows);
+  const headerRow = normalizedRows[headerRowIndex] || [];
+  const mailCol = headerRow.findIndex((cell) => String(cell).trim().toLowerCase() === "mail");
+  const lineCol = headerRow.findIndex((cell) => String(cell).trim().toLowerCase() === "line");
+  const shouldAppendMail = mailCol < 0;
+  const shouldAppendLine = lineCol < 0;
+
+  return normalizedRows.map((row, rowIndex) => {
+    const nextRow = [...row];
+
+    if (rowIndex === headerRowIndex) {
+      if (shouldAppendMail) nextRow.push(notificationHeaders[0]);
+      if (shouldAppendLine) nextRow.push(notificationHeaders[1]);
+      return nextRow.map(convertCellForExport);
+    }
+
+    if (isRealCaseRow(row, rowIndex, headerRowIndex)) {
+      if (mailCol >= 0) nextRow[mailCol] = contactInfo.mail.trim();
+      if (lineCol >= 0) nextRow[lineCol] = contactInfo.line.trim();
+      if (shouldAppendMail) nextRow.push(contactInfo.mail.trim());
+      if (shouldAppendLine) nextRow.push(contactInfo.line.trim());
+    } else {
+      if (shouldAppendMail) nextRow.push("");
+      if (shouldAppendLine) nextRow.push("");
+    }
+
+    return nextRow.map(convertCellForExport);
+  });
+};
+
 const getColumnWidthFromHeader = (header) => {
   const text = String(header || "");
   if (text === "ที่") return { min: 62, max: 72 };
@@ -110,6 +150,7 @@ export default function App() {
   const [sheets, setSheets] = useState([]);
   const [activeSheet, setActiveSheet] = useState("");
   const [sheetRows, setSheetRows] = useState({});
+  const [contactInfo, setContactInfo] = useState({ mail: "", line: "" });
 
   const rows = sheetRows[activeSheet] || [];
   const headerRowIndex = useMemo(() => findHeaderRowIndex(rows), [rows]);
@@ -174,7 +215,7 @@ export default function App() {
     }
     const workbook = XLSX.utils.book_new();
     sheets.forEach((sheetName) => {
-      const cleanRows = (sheetRows[sheetName] || []).map((row) => row.map(convertCellForExport));
+      const cleanRows = buildRowsForExport(sheetRows[sheetName] || [], contactInfo);
       const worksheet = XLSX.utils.aoa_to_sheet(cleanRows);
       XLSX.utils.book_append_sheet(workbook, worksheet, sheetName.slice(0, 31));
     });
@@ -185,7 +226,7 @@ export default function App() {
   const exportActiveSheet = () => {
     if (!activeSheet) return;
     const workbook = XLSX.utils.book_new();
-    const cleanRows = (sheetRows[activeSheet] || []).map((row) => row.map(convertCellForExport));
+    const cleanRows = buildRowsForExport(sheetRows[activeSheet] || [], contactInfo);
     const worksheet = XLSX.utils.aoa_to_sheet(cleanRows);
     XLSX.utils.book_append_sheet(workbook, worksheet, activeSheet.slice(0, 31));
     XLSX.writeFile(workbook, `${activeSheet}_export.xlsx`);
@@ -220,6 +261,24 @@ export default function App() {
           <label className="case-file-button">
             เลือกไฟล์ Excel
             <input type="file" accept=".xlsx,.xls" onChange={handleFileUpload} />
+          </label>
+          <label className="case-contact-field">
+            <span>Mail</span>
+            <input
+              type="email"
+              value={contactInfo.mail}
+              placeholder="company@example.com"
+              onChange={(event) => setContactInfo((current) => ({ ...current, mail: event.target.value }))}
+            />
+          </label>
+          <label className="case-contact-field">
+            <span>Line</span>
+            <input
+              type="text"
+              value={contactInfo.line}
+              placeholder="@lineoa หรือ LINE ID"
+              onChange={(event) => setContactInfo((current) => ({ ...current, line: event.target.value }))}
+            />
           </label>
           <button className="case-primary-button" onClick={exportExcel} disabled={!sheets.length}>Export Excel ทุกชีต</button>
           <button className="case-secondary-button" onClick={exportActiveSheet} disabled={!activeSheet}>Export เฉพาะชีตนี้</button>

@@ -53,6 +53,35 @@ body {
 .case-secondary-button { border: 1px solid #d1d5db; background: #ffffff; color: #111827; }
 .case-primary-button:disabled, .case-secondary-button:disabled { cursor: not-allowed; opacity: 0.45; }
 
+.case-contact-field {
+  display: grid;
+  grid-template-columns: auto minmax(170px, 220px);
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 6px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #f9fafb;
+  color: #374151;
+  font-weight: 700;
+}
+
+.case-contact-field input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #111827;
+  font: inherit;
+  font-weight: 400;
+}
+
+.case-contact-field input::placeholder {
+  color: #9ca3af;
+}
+
 .case-file-name { margin-top: 12px; color: #374151; font-size: 14px; }
 
 .case-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
